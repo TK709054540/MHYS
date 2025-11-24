@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>梅花易数 · 道法自然</title>
+    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.12/lunar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* --- 居中固定和道家玄墨金风格 --- */
+        :root {
+            --color-ink-deep: #202a33;       /* 玄墨深 (Primary Text/Background) */
+            --color-gold-main: #c58c35;      /* 鎏金主色 (Accent) */
+            --color-cinnabar: #B22222;       /* 朱砂红 (Highlight/Action) */
+            --color-paper-light: #fffaf0;    /* 宣纸白 (Soft Background) */
+            --color-border-subtle: #d0d0d0;  /* 淡描边 */
+            --color-card-bg: rgba(255, 255, 255, 0.95); /* 半透明卡片 */
+            
+            /* 玄幻效果 */
+            --shadow-float: 0 15px 45px rgba(0, 0, 0, 0.3); 
+            --glow-gold: rgba(197, 140, 53, 0.8);          
+            
+            --font-main: 'FangSong', 'KaiTi', 'SimSun', serif;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--color-ink-deep); 
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><defs><pattern id="p" width="50" height="50" patternUnits="userSpaceOnUse"><rect width="50" height="50" fill="%23202a33" /><path d="M0,25 Q25,0 50,25 Q25,50 0,25 Z" stroke="%23384a5a" stroke-width="0.3" fill="none"/></pattern></defs><rect width="100%" height="100%" fill="url(%23p)" /></svg>');
+            color: var(--color-ink-deep);
+            margin: 0;
+            
+            /* 手机端布局优化：留出边距，从顶部开始堆叠，允许滚动 */
+            padding: 30px 15px; 
+            display: flex;
+            align-items: flex-start; /* 垂直对齐从顶部开始 (解决内容过长的问题) */
+            justify-content: center; /* 水平居中 */
+            min-height: 100vh; /* 占满整个视口高度 */
+            overflow-y: auto; 
+            box-sizing: border-box;
+        }
+
+        .app-container {
+            width: 100%; /* 确保在小屏幕上充分利用宽度 */
+            max-width: 480px;
+            margin: 0; /* 边距由 body padding 控制 */
+            background: var(--color-card-bg);
+            border-radius: 18px; 
+            box-shadow: var(--shadow-float);
+            padding: 35px;
+            border: 2px solid var(--color-gold-main); 
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            backdrop-filter: blur(2px); 
+        }
+
+        /* 标题区 */
+        header { 
+            text-align: center;
+            margin-bottom: 40px; 
+            border-bottom: 2px solid var(--color-gold-main); 
+            padding-bottom: 20px; 
+        }
+        h1 { 
+            margin: 0;
+            font-size: 2.5rem; 
+            letter-spacing: 6px; 
+            color: var(--color-ink-deep); 
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+        h1 span { 
+            color: var(--color-cinnabar); 
+            text-shadow: 0 0 8px var(--glow-gold); 
+        }
+        .subtitle { 
+            font-size: 1.1rem; 
+            color: var(--color-gold-main); 
+            margin-top: 10px; 
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+
+        /* 输入区 */
+        .input-group { 
+            margin-bottom: 30px; 
+        }
+        .input-group label { 
+            display: block; 
+            margin-bottom: 15px; 
+            font-size: 1.05rem; 
+            color: var(--color-ink-deep);
+            text-align: center; 
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        input[type="text"], input[type="number"] { 
+            width: 100%;
+            padding: 16px; 
+            font-size: 1.1rem;
+            border: 2px solid var(--color-ink-deep); 
+            border-radius: 10px;
+            box-sizing: border-box;
+            background: var(--color-paper-light); 
+            text-align: center;
+            outline: none;
+            transition: all 0.3s;
+            box-shadow: inset 0 1px 5px rgba(0,0,0,0.1);
+        }
+        input[type="text"]:focus, input[type="number"]:focus { 
+            border-color: var(--color-gold-main); 
+            box-shadow: 0 0 12px var(--glow-gold), inset 0 1px 5px rgba(0,0,0,0.2); 
+        }
+        .num-inputs {
+            display: flex; gap: 12px;
+            background: #eef1f3; 
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+        }
+        .num-inputs input {
+            padding: 12px; 
+        }
+        .input-hint {
+            font-size: 0.85rem; color: #555; margin-top: 10px; text-align: center;
+        }
+
+        /* 按钮风格 */
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            letter-spacing: 3px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        .btn-start { 
+            background: linear-gradient(145deg, var(--color-cinnabar) 50%, #d44d4d);
+            color: var(--color-paper-light);
+            border-bottom: 5px solid var(--color-ink-deep); 
+        }
+        .btn-start:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(178, 34, 34, 0.6);
+            border-bottom: 2px solid var(--color-ink-deep); 
+        }
+        .btn-start:active { 
+            transform: translateY(2px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-bottom: 5px solid var(--color-ink-deep); 
+        }
+        .btn-start:disabled { 
+            background: #ccc; 
+            border-bottom: 5px solid #999;
+            cursor: not-allowed; 
+            box-shadow: none; 
+        }
+        .btn-ai { 
+            background: var(--color-ink-deep); 
+            color: var(--color-gold-main); 
+            margin-top: 20px;
+            border: 2px solid var(--color-gold-main); 
+        }
+        .btn-ai:disabled { 
+            background: #444;
+            color: #aaa;
+            border: 2px solid #555;
+            cursor: not-allowed;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .btn-restart { 
+            background: none; 
+            border: 1px dashed var(--color-border-subtle); 
+            color: #777; 
+            margin-top: 40px;
+            box-shadow: none;
+            font-size: 1rem;
+        }
+
+        /* 卦象展示区 */
+        .stage-area {
+            min-height: 80px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 30px 0;
+            background: var(--color-paper-light);
+            border-radius: 15px;
+            border: 3px double var(--color-gold-main); 
+            box-shadow: 0 0 15px rgba(197, 140, 53, 0.3);
+            padding: 25px 15px;
+            flex-direction: column;
+            text-align: center;
+        }
+        .gua-display {
+            display: flex; 
+            justify-content: center;
+            gap: 20px; 
+            margin-top: 15px;
+        }
+        .gua-block {
+            padding: 10px 15px;
+            border-radius: 8px;
+            background: #fdfdfd;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid var(--color-border-subtle);
+        }
+        .gua-block p { 
+            margin: 0; 
+            font-weight: bold; 
+            font-size: 0.95rem; 
+            color: var(--color-gold-main); 
+            letter-spacing: 1px;
+        }
+        .yao-line {
+            font-family: 'Courier New', monospace; 
+            font-size: 1.8rem; 
+            line-height: 1.3;
+            font-weight: 900;
+            color: var(--color-ink-deep);
+        }
+        .yao-line.dong {
+            color: var(--color-cinnabar); 
+            text-shadow: 0 0 7px rgba(178, 34, 34, 0.6); 
+        }
+
+        /* 结果卡片 */
+        .result-card {
+            padding: 30px;
+            border-radius: 15px;
+            background: var(--color-paper-light);
+            border: 3px ridge var(--color-gold-main); 
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2), 0 0 20px var(--glow-gold);
+        }
+        .card-title { 
+            text-align: center; 
+            color: var(--color-cinnabar); 
+            font-size: 1.8rem; 
+            margin-bottom: 25px;
+            letter-spacing: 4px;
+            font-weight: 900; 
+            border-bottom: 1px dashed var(--color-border-subtle);
+            padding-bottom: 10px;
+        }
+        .meta-info { 
+            font-size: 1rem; 
+            color: #555; 
+            margin-bottom: 25px; 
+            line-height: 2; 
+            text-align: left;
+            padding: 10px 20px;
+            border-left: 5px solid var(--color-gold-main); 
+            background: #f7f7f7;
+            border-radius: 8px;
+        }
+
+        /* AI 解读内容 */
+        .ai-content { 
+            border-top: 2px dashed var(--color-gold-main); 
+            padding-top: 30px; 
+            margin-top: 30px; 
+            line-height: 2; 
+            font-size: 1.05rem;
+            color: var(--color-ink-deep);
+        }
+        .ai-content h3 { 
+            color: var(--color-cinnabar); 
+            font-size: 1.3rem; 
+            margin-top: 2em; 
+            margin-bottom: 1em; 
+            border-left: 5px solid var(--color-cinnabar); 
+            padding-left: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>心易<span>神数</span></h1>
+        <div class="subtitle">道法自然</div>
+    </header>
+
+    <div id="setupView">
+        <div class="input-group">
+            <label for="question">🙏 虔心默念所问之事，然后输入：</label>
+            <input type="text" id="question" placeholder="例如：今日投资成败如何？">
+        </div>
+
+        <div class="input-group">
+            <label>🔢 请输入起卦三数（任意正整数）：</label>
+            <div class="num-inputs">
+                <input type="number" id="numUp" placeholder="上卦数" min="1" max="999" required style="flex: 1;">
+                <input type="number" id="numLow" placeholder="下卦数" min="1" max="999" required style="flex: 1;">
+                <input type="number" id="numDong" placeholder="动爻数" min="1" max="999" required style="flex: 1;">
+            </div>
+            <div class="input-hint">
+                <p style="margin: 0;">以心所感应之数为准，万物皆可起卦。</p>
+            </div>
+        </div>
+
+        <button class="btn btn-start" id="calculateBtn" onclick="startMeiHua()">开始占卜，洞察天机</button>
+    </div>
+
+    <div id="resultView" style="display: none;">
+        <div class="result-card">
+            <div class="card-title">✨ 易理精微，神机解语 ✨</div>
+            <div class="meta-info" id="cardMeta"></div>
+            
+            <div class="stage-area">
+                <div style="font-weight: bold; color: var(--color-gold-main); font-size: 1.1rem;">【三易之象】</div>
+                <div class="gua-display" id="guaDisplay">
+                    </div>
+                <div id="dongYaoInfo" style="margin-top: 15px; font-weight: bold; color: var(--color-cinnabar);"></div>
+            </div>
+            
+            <div class="ai-content" id="aiOutput">
+                <div style="text-align:center; color:#777; font-size: 1.1rem;">请点击下方按钮，启动 AI 卜筮之能...</div>
+                <div style="text-align:center; margin-top:20px;">
+                    <button class="btn btn-ai" id="aiBtn" onclick="callGeminiAI()" disabled>🤖 请求 AI 大师解卦</button>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align:center;">
+            <button class="btn btn-restart" onclick="location.reload()">重新起卦 (心念诚则灵)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Gemini API 配置 (沿用您的 Worker URL) ---
+    const GEMINI_ENDPOINT = "https://t6.tk709054540.workers.dev"; 
+
+
+    
+    // --- 核心配置：八卦信息 ---
+    const CFG = {
+        EIGHT_GUA: ['坤', '艮', '坎', '震', '巽', '离', '兑', '乾'], 
+        GUA_INFO: {
+            '乾': { name: '乾', symbol: '☰', wuxing: '金', number: 1, structure: '111', bits: [1, 1, 1] },
+            '兑': { name: '兑', symbol: '☱', wuxing: '金', number: 2, structure: '011', bits: [1, 1, 0] },
+            '离': { name: '离', symbol: '☲', wuxing: '火', number: 3, structure: '101', bits: [1, 0, 1] },
+            '震': { name: '震', symbol: '☳', wuxing: '木', number: 4, structure: '001', bits: [1, 0, 0] },
+            '巽': { name: '巽', symbol: '☴', wuxing: '木', number: 5, structure: '110', bits: [0, 1, 1] },
+            '坎': { name: '坎', symbol: '☵', wuxing: '水', number: 6, structure: '010', bits: [0, 1, 0] },
+            '艮': { name: '艮', symbol: '☶', wuxing: '土', number: 7, structure: '100', bits: [0, 0, 1] },
+            '坤': { name: '坤', symbol: '☷', wuxing: '土', number: 8, structure: '000', bits: [0, 0, 0] }
+        },
+        YAO_SYMBOL: {
+            '1': '━━━', 
+            '0': '━　━', 
+        }
+    };
+    
+    let state = { data: {} };
+
+    // --- 梅花易数起卦主函数 ---
+    function startMeiHua() {
+        try {
+            document.getElementById('aiBtn').disabled = true;
+
+            const q = document.getElementById('question').value.trim();
+            const numUp = Math.abs(parseInt(document.getElementById('numUp').value));
+            const numLow = Math.abs(parseInt(document.getElementById('numLow').value));
+            const numDong = Math.abs(parseInt(document.getElementById('numDong').value));
+
+            if (!q || isNaN(numUp) || isNaN(numLow) || isNaN(numDong) || numUp < 1 || numLow < 1 || numDong < 1) {
+                alert("请虔诚输入所问问题，并完整输入三个大于0的起卦数字。");
+                return;
+            }
+
+            const upGuaIndex = (numUp - 1) % 8; 
+            const lowGuaIndex = (numLow - 1) % 8; 
+            const dongYao = (numUp + numLow + numDong - 1) % 6; 
+            
+            const upGuaName = CFG.EIGHT_GUA[upGuaIndex];
+            const lowGuaName = CFG.EIGHT_GUA[lowGuaIndex];
+
+            const mainGua = getHexagramInfo(upGuaName, lowGuaName);
+            const interGua = getInterGuaInfo(mainGua.structure);
+            const changeGua = getChangeGuaInfo(mainGua.structure, dongYao);
+
+            let dateStr = "";
+            try { 
+                // lunar-javascript 确保加载成功
+                const l = Solar.fromDate(new Date()).getLunar();
+                dateStr = l.getYearInGanZhi() + "年" + l.getMonthInGanZhi() + "月" + l.getDayInGanZhi() + "日";
+            } catch(e) { 
+                dateStr = (new Date()).toLocaleDateString('zh-CN');
+            }
+
+            state.data = {
+                q: q,
+                d: dateStr,
+                n: `${numUp}, ${numLow}, ${numDong}`,
+                main: mainGua,
+                inter: interGua,
+                change: changeGua,
+                dong: dongYao + 1 // 1到6爻
+            };
+
+            document.getElementById('setupView').style.display = 'none';
+            document.getElementById('resultView').style.display = 'block';
+            updateResultView();
+            
+            // 成功起卦后，启用AI解卦按钮
+            document.getElementById('aiBtn').disabled = false; 
+
+        } catch(e) {
+            console.error("梅花起卦功能出错:", e);
+            alert("起卦功能出现异常，请检查输入或控制台。错误详情: " + e.message);
+        }
+    }
+
+    // --- 更新结果展示区 (无变化) ---
+    function updateResultView() {
+        const d = state.data;
+        
+        document.getElementById('cardMeta').innerHTML = `
+            <strong>所问：</strong>${d.q}<br>
+            <strong>起卦时间：</strong>${d.d}<br>
+            <strong>起数：</strong>${d.n}<br>
+            <strong>主卦：</strong>${d.main.up.name}${d.main.low.name} (${d.main.up.wuxing}与${d.main.low.wuxing})
+        `;
+
+        const yaoNames = ['初', '二', '三', '四', '五', '上'];
+        document.getElementById('dongYaoInfo').innerHTML = `
+            动爻位于${yaoNames[d.dong - 1]}爻：此为卦变之机。
+        `;
+
+        const mainGuaLines = d.main.structure.split('');
+        const changeGuaLines = d.change.structure.split(''); 
+        
+        let mainHtml = '<div class="gua-block"><p>主卦 (本)</p>';
+        for (let i = 5; i >= 0; i--) {
+            const isDong = i === (d.dong - 1);
+            const lineClass = isDong ? 'yao-line dong' : 'yao-line';
+            const mainSymbol = CFG.YAO_SYMBOL[mainGuaLines[i]];
+            const yaoIndexText = ['初', '二', '三', '四', '五', '上'][i];
+            mainHtml += `<div class="${lineClass}">${mainSymbol} <span style="font-size:0.7em; color:#888;">${yaoIndexText}</span></div>`;
+        }
+        mainHtml += `</div>`;
+
+        let changeHtml = '<div class="gua-block"><p>变卦 (之)</p>';
+        for (let i = 5; i >= 0; i--) {
+            const isDong = i === (d.dong - 1);
+            const lineClass = isDong ? 'yao-line dong' : 'yao-line';
+            const changeSymbol = CFG.YAO_SYMBOL[changeGuaLines[i]];
+            changeHtml += `<div class="${lineClass}">${changeSymbol}</div>`;
+        }
+        changeHtml += `</div>`;
+
+        const interStructure = d.inter.structure;
+        let interHtml = `<div class="gua-block"><p>互卦 (中盘)</p>
+            <div style="margin-top: 5px;">
+                <div class="yao-line">${CFG.YAO_SYMBOL[interStructure[5]]}</div>
+                <div class="yao-line">${CFG.YAO_SYMBOL[interStructure[4]]}</div>
+                <div class="yao-line">${CFG.YAO_SYMBOL[interStructure[3]]}</div>
+                <div style="height: 5px; border-bottom: 1px dotted #888; margin: 3px 0;"></div>
+                <div class="yao-line">${CFG.YAO_SYMBOL[interStructure[2]]}</div>
+                <div class="yao-line">${CFG.YAO_SYMBOL[interStructure[1]]}</div>
+                <div class="yao-line">${CFG.YAO_SYMBOL[interStructure[0]]}</div>
+            </div>
+            <p style="font-size:0.8em; color:#555; margin-top:5px;">${d.inter.up.name}${d.inter.low.name}</p>
+        </div>`;
+
+
+        document.getElementById('guaDisplay').innerHTML = `
+            ${mainHtml}
+            ${interHtml}
+            ${changeHtml}
+        `;
+    }
+
+
+    // --- AI 解卦函数 ---
+    async function callGeminiAI() {
+        const btn = document.getElementById('aiBtn');
+        const out = document.getElementById('aiOutput');
+        const d = state.data;
+        
+        btn.disabled = true;
+        btn.innerText = "⏳ AI 大师正在推演天机，请稍候...";
+        out.innerHTML = `<div style='text-align:center; color:${getComputedStyle(document.documentElement).getPropertyValue('--color-gold-main').trim()};'>神机推演中，请稍候...</div>`;
+        
+        // 核心提示词：引导 Gemini 扮演梅花易数大师 
+        const prompt = `你是专业的梅花易数大师，精通邵雍的《梅花易数》。你的任务是根据提供的卦象信息和问题，进行精确的占断和分析。请严格按照以下步骤推算并格式化输出，务必保证专业、权威和易懂：
+
+问题：${d.q}
+起卦信息：时间：${d.d}，起数：${d.n}
+主卦（本卦）：${d.main.up.name}${d.main.low.name}卦
+互卦：${d.inter.up.name}${d.inter.low.name}卦
+变卦（之卦）：${d.change.up.name}${d.change.low.name}卦
+动爻：第${d.dong}爻
+
+### 1. 易理体用分析（判断吉凶之源）
+
+- **体卦**（问事主体，依动爻定体用）与**用卦**（所问之事/客体）。
+- 分析体用卦的五行生克（${d.main.up.name}属${d.main.up.wuxing}，${d.main.low.name}属${d.main.low.wuxing}）。
+- 动爻在体用卦中的位置和变化，判断其对吉凶的影响。
+
+### 2. 吉凶断语与详释
+
+- 直接给出占卜结论（**大吉/吉/平/凶/大凶**）。
+- 结合主卦之理（天时）、互卦之情（人事）、变卦之应（结果），详细解释体用生克关系和动爻变化是如何得出此结论的。
+
+### 3. 道法自然，行动指引
+
+- 提供通俗易懂、具有哲理性的行动指导和建议，阐明趋吉避凶之道。`; 
+        
+        try {
+            // 请求发送到 Worker Endpoint
+            const res = await fetch(GEMINI_ENDPOINT, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{role: "user", parts: [{text: prompt}]}],
+                    generationConfig: {temperature: 1.0} 
+                   })
+            });
+            const data = await res.json();
+            
+            if(res.status !== 200 || !data.candidates || data.candidates.length === 0) {
+                 throw new Error(data.error?.message || `代理请求失败，状态码: ${res.status}`);
+            }
+            
+            const resultText = data.candidates[0].content.parts[0].text;
+            out.innerHTML = typeof marked !== 'undefined' ? marked.parse(resultText) : resultText;
+            btn.style.display = 'none';
+        } catch(e) {
+            // 【重点优化】使用更清晰的错误提示，指明外部问题
+            out.innerHTML = `<div style="color:var(--color-cinnabar); font-weight:bold;">❌ 推算失败 (网络/服务错误)：<br>请检查您的手机网络连接，并确认 Worker URL 服务是否正常工作。错误详情: ${e.message}</div>`;
+            btn.innerText = "❌ 重新请求"; btn.disabled = false;
+            console.error("AI解卦错误:", e);
+        }
+    }
+
+
+    // --- 核心辅助函数（无变化） ---
+
+    function getHexagramInfo(upName, lowName) {
+        const upGua = CFG.GUA_INFO[upName];
+        const lowGua = CFG.GUA_INFO[lowName];
+        const structure = lowGua.structure + upGua.structure; 
+        return {
+            up: upGua,
+            low: lowGua,
+            structure: structure,
+            name: upName + lowName
+        };
+    }
+
+    function getInterGuaInfo(mainStructure) {
+        const structure = mainStructure.split(''); 
+        const lowInterBits = [structure[1], structure[2], structure[3]]; 
+        const upInterBits = [structure[2], structure[3], structure[4]]; 
+
+        const getGuaByBits = (bits) => {
+            const str = bits.join('');
+            return Object.values(CFG.GUA_INFO).find(g => g.structure === str);
+        };
+
+        const upInter = getGuaByBits(upInterBits);
+        const lowInter = getGuaByBits(lowInterBits);
+
+        const interStructure = lowInterBits.join('') + upInterBits.join('');
+
+        return {
+            up: upInter,
+            low: lowInter,
+            structure: interStructure,
+            name: upInter.name + lowInter.name
+        };
+    }
+
+    function getChangeGuaInfo(mainStructure, dongYaoIndex) {
+        let changeStructure = mainStructure.split('');
+        
+        changeStructure[dongYaoIndex] = changeStructure[dongYaoIndex] === '1' ? '0' : '1'; 
+        
+        const finalStructure = changeStructure.join('');
+        
+        const upChangeBits = [changeStructure[3], changeStructure[4], changeStructure[5]];
+        const lowChangeBits = [changeStructure[0], changeStructure[1], changeStructure[2]];
+        
+        const getGuaByBits = (bits) => {
+            const str = bits.join('');
+            return Object.values(CFG.GUA_INFO).find(g => g.structure === str);
+        };
+
+        const upChange = getGuaByBits(upChangeBits);
+        const lowChange = getGuaByBits(lowChangeBits);
+
+        return {
+            up: upChange,
+            low: lowChange,
+            structure: finalStructure,
+            name: upChange.name + lowChange.name
+        };
+    }
+
+
+    window.onload = function() {
+        document.getElementById('calculateBtn').disabled = false;
+    };
+</script>
+</body>
+</html>
